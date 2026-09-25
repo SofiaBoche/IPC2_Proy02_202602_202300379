@@ -1,8 +1,26 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Inicio";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="text-center py-5">
+    <div class="card shadow-lg p-4 mx-auto" style="max-width: 800px; border-top: 5px solid var(--azul-marino);">
+        <div class="card-body">
+            <h1 class="display-4 fw-bold" style="color: var(--azul-marino);">Sistema de Gestión de Biblioteca</h1>
+            <p class="lead mt-3 text-muted">
+                Bienvenido a la plataforma de administración de catálogo  <strong>.
+            </p>
+            <hr class="my-4" style="border-color: var(--amarillo-crema);">
+            
+            <p class="mb-4">Selecciona una de las opciones principales para comenzar:</p>
+            
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <a class="btn btn-primary btn-lg px-4" asp-controller="Carga" asp-action="Index">
+                    Carga Masiva XML
+                </a>
+                <a class="btn btn-outline-dark btn-lg px-4" asp-controller="Catalogo" asp-action="Index" style="border-color: var(--azul-marino); color: var(--azul-marino);">
+                    Explorar Catálogo
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
