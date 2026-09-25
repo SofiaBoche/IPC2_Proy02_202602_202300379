@@ -3,23 +3,41 @@
 }
 
 <div class="text-center py-5">
-    <div class="card shadow-lg p-4 mx-auto" style="max-width: 800px; border-top: 5px solid var(--azul-marino);">
+    <div class="card shadow-lg p-4 mx-auto" style="max-width: 800px; border-top: 5px solid var(--azul-marino, #0d6efd);">
         <div class="card-body">
-            <h1 class="display-4 fw-bold" style="color: var(--azul-marino);">Sistema de Gestión de Biblioteca</h1>
+            <h1 class="display-4 fw-bold" style="color: var(--azul-marino, #0d6efd);">Sistema de Gestión de Biblioteca</h1>
+            
             <p class="lead mt-3 text-muted">
-                Bienvenido a la plataforma de administración de catálogo  <strong>.
+                Bienvenido a la plataforma de administración de catálogo</strong>.
             </p>
-            <hr class="my-4" style="border-color: var(--amarillo-crema);">
+            
+            <hr class="my-4" style="border-color: var(--amarillo-crema, #ffc107);">
+
+            @if (TempData["Mensaje"] != null)
+            {
+                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                    @TempData["Mensaje"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
             
             <p class="mb-4">Selecciona una de las opciones principales para comenzar:</p>
             
             <div class="d-flex justify-content-center gap-3 flex-wrap">
+
                 <a class="btn btn-primary btn-lg px-4" asp-controller="Carga" asp-action="Index">
                     Carga Masiva XML
                 </a>
-                <a class="btn btn-outline-dark btn-lg px-4" asp-controller="Catalogo" asp-action="Index" style="border-color: var(--azul-marino); color: var(--azul-marino);">
+
+                <a class="btn btn-outline-dark btn-lg px-4" asp-controller="Catalogo" asp-action="Index" style="border-color: var(--azul-marino, #0d6efd); color: var(--azul-marino, #0d6efd);">
                     Explorar Catálogo
                 </a>
+
+                <form asp-controller="Home" asp-action="InicializarSistema" method="post" onsubmit="return confirm('¿Estás seguro de que deseas reiniciar todo el sistema a cero?');">
+                    <button type="submit" class="btn btn-danger btn-lg px-4">
+                        Inicializar Sistema
+                    </button>
+                </form>
             </div>
         </div>
     </div>

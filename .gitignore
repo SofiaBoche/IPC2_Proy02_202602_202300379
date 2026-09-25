@@ -1,6 +1,6 @@
 bin/
 obj/
-ProyectoWeb/bin/
-ProyectoWeb/obj/
+**/bin/
+**/obj/
+.vscode/
 publish/
-.vs/

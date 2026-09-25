@@ -9,96 +9,112 @@ namespace ProyectoWeb.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            Libro[] listaLibros = ObtenerTodosLosLibros();
-            return View(listaLibros);
+            ViewBag.EstructuraCategorias = CargaController.JerarquiaCategorias.MostrarEstructura();
+            return View();
         }
 
         [HttpPost]
-        public IActionResult Buscar(long isbn)
+        public IActionResult AgregarCategoria(string nombre, string padre)
         {
-            Libro libroEncontrado = BuscarEnJerarquia(CargaController.JerarquiaCategorias.Raiz, isbn);
-            
-            if (libroEncontrado == null)
+            if (!string.IsNullOrEmpty(nombre))
             {
-                ViewBag.Mensaje = $"No se encontró ningún libro con el ISBN: {isbn}";
-                return View("Index", new Libro[0]);
+                CargaController.JerarquiaCategorias.InsertarOCategorizar(nombre, padre);
+                TempData["Exito"] = $"Categoría '{nombre}' agregada exitosamente.";
+            }
+            else
+            {
+                TempData["Error"] = "El nombre de la categoría no puede estar vacío.";
+            }
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public IActionResult RegistrarLibro(long isbn, string titulo, string autor, string categoria)
+        {
+            if (isbn <= 0 || string.IsNullOrEmpty(titulo) || string.IsNullOrEmpty(categoria))
+            {
+                TempData["Error"] = "Todos los campos son obligatorios y el ISBN debe ser válido.";
+                return RedirectToAction("Index");
             }
 
-            return View("Index", new Libro[] { libroEncontrado });
-        }
+            Libro nuevo = new Libro(isbn, titulo, autor, categoria);
 
-        private Libro[] ObtenerTodosLosLibros()
-        {
-            int totalLibros = ContarLibrosEnJerarquia(CargaController.JerarquiaCategorias.Raiz);
-            Libro[] arreglo = new Libro[totalLibros];
-            int indice = 0;
-            
-            RecolectarLibros(CargaController.JerarquiaCategorias.Raiz, arreglo, ref indice);
-            return arreglo;
-        }
+            CargaController.LibrosGlobales.Insertar(nuevo);
 
-        private int ContarLibrosEnJerarquia(NodoCategoria nodoCat)
-        {
-            if (nodoCat == null) return 0;
-
-            int conteo = ContarNodosAVL(nodoCat.Libros.Raiz);
-
-            NodoCategoria sub = nodoCat.Subcategorias.Cabeza;
-            while (sub != null)
+            NodoCategoria nodoCat = CargaController.JerarquiaCategorias.Buscar(categoria);
+            if (nodoCat == null)
             {
-                conteo += ContarLibrosEnJerarquia(sub);
-                sub = sub.Siguiente;
+                nodoCat = CargaController.JerarquiaCategorias.InsertarOCategorizar(categoria);
+            }
+            nodoCat.Libros.Insertar(nuevo);
+
+            TempData["Exito"] = $"Libro '{titulo}' registrado con éxito.";
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public IActionResult EliminarLibro(long isbn)
+        {
+            Libro hallado = CargaController.LibrosGlobales.Buscar(isbn);
+            if (hallado != null)
+            {
+                CargaController.LibrosGlobales.Eliminar(isbn);
+
+                NodoCategoria nodoCat = CargaController.JerarquiaCategorias.Buscar(hallado.Categoria);
+                if (nodoCat != null)
+                {
+                    nodoCat.Libros.Eliminar(isbn);
+                }
+
+                TempData["Exito"] = $"El libro con ISBN {isbn} fue eliminado correctamente.";
+            }
+            else
+            {
+                TempData["Error"] = $"No se encontró ningún libro con ISBN {isbn}.";
+            }
+            return RedirectToAction("Index");
+        }
+
+        [HttpGet]
+        public IActionResult ConsultarISBN(string tipo, long? isbn)
+        {
+            if (tipo == "menor")
+            {
+                Libro menor = CargaController.LibrosGlobales.ObtenerMenor(); // 3 pts
+                ViewBag.Resultado = menor != null ? $"Menor ISBN: {menor.ISBN} - '{menor.Titulo}' por {menor.Autor}" : "El catálogo está vacío.";
+            }
+            else if (tipo == "mayor")
+            {
+                Libro mayor = CargaController.LibrosGlobales.ObtenerMayor(); // 3 pts
+                ViewBag.Resultado = mayor != null ? $"Mayor ISBN: {mayor.ISBN} - '{mayor.Titulo}' por {mayor.Autor}" : "El catálogo está vacío.";
+            }
+            else if (tipo == "buscar" && isbn.HasValue)
+            {
+                Libro buscado = CargaController.LibrosGlobales.Buscar(isbn.Value); // 4 pts
+                ViewBag.Resultado = buscado != null 
+                    ? $"Libro Encontrado: ISBN {buscado.ISBN} | Título: {buscado.Titulo} | Autor: {buscado.Autor} | Categoría: {buscado.Categoria}" 
+                    : $"No existe ningún libro registrado con ISBN {isbn.Value}.";
             }
 
-            return conteo;
+            ViewBag.EstructuraCategorias = CargaController.JerarquiaCategorias.MostrarEstructura();
+            return View("Index");
         }
 
-        private int ContarNodosAVL(NodoLibro nodo)
+        [HttpGet]
+        public IActionResult ReporteCategorias(string subcategoria)
         {
-            if (nodo == null) return 0;
-            return 1 + ContarNodosAVL(nodo.Izquierdo) + ContarNodosAVL(nodo.Derecho);
+            string dot = CargaController.JerarquiaCategorias.GenerarGraphviz(subcategoria);
+            ViewBag.CodigoDot = dot;
+            ViewBag.Subcategoria = subcategoria;
+            return View();
         }
 
-        private void RecolectarLibros(NodoCategoria nodoCat, Libro[] arreglo, ref int indice)
+        [HttpGet]
+        public IActionResult ReporteAVL()
         {
-            if (nodoCat == null) return;
-
-            LlenarArregloInOrden(nodoCat.Libros.Raiz, arreglo, ref indice);
-
-            NodoCategoria sub = nodoCat.Subcategorias.Cabeza;
-            while (sub != null)
-            {
-                RecolectarLibros(sub, arreglo, ref indice);
-                sub = sub.Siguiente;
-            }
-        }
-
-        private void LlenarArregloInOrden(NodoLibro nodo, Libro[] arreglo, ref int indice)
-        {
-            if (nodo != null)
-            {
-                LlenarArregloInOrden(nodo.Izquierdo, arreglo, ref indice);
-                arreglo[indice++] = nodo.Dato;
-                LlenarArregloInOrden(nodo.Derecho, arreglo, ref indice);
-            }
-        }
-
-        private Libro BuscarEnJerarquia(NodoCategoria nodoCat, long isbn)
-        {
-            if (nodoCat == null) return null;
-
-            Libro hallado = nodoCat.Libros.Buscar(isbn);
-            if (hallado != null) return hallado;
-
-            NodoCategoria sub = nodoCat.Subcategorias.Cabeza;
-            while (sub != null)
-            {
-                hallado = BuscarEnJerarquia(sub, isbn);
-                if (hallado != null) return hallado;
-                sub = sub.Siguiente;
-            }
-
-            return null;
+            string dot = CargaController.LibrosGlobales.GenerarGraphviz();
+            ViewBag.CodigoDot = dot;
+            return View();
         }
     }
 }

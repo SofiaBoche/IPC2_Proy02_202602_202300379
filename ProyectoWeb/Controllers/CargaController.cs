@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using ProyectoWeb.Estructuras;
 using ProyectoWeb.Models;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace ProyectoWeb.Controllers
@@ -8,6 +11,7 @@ namespace ProyectoWeb.Controllers
     public class CargaController : Controller
     {
         public static ArbolCategorias JerarquiaCategorias = new ArbolCategorias();
+        public static ArbolAVL LibrosGlobales = new ArbolAVL();
 
         [HttpGet]
         public IActionResult Index()
@@ -20,7 +24,7 @@ namespace ProyectoWeb.Controllers
         {
             if (archivo == null || archivo.Length == 0)
             {
-                ViewBag.Error = "Por favor, selecciona un archivo válido.";
+                ViewBag.Error = "Por favor, selecciona un archivo XML válido.";
                 return View("Index");
             }
 
@@ -33,7 +37,7 @@ namespace ProyectoWeb.Controllers
                     var categoriasXml = doc.Descendants("categoria");
                     foreach (var catElem in categoriasXml)
                     {
-                        string nombreCat = catElem.Value.Trim();
+                        string nombreCat = catElem.Value?.Trim();
                         string padreCat = catElem.Attribute("padre")?.Value?.Trim();
 
                         if (!string.IsNullOrEmpty(nombreCat))
@@ -45,23 +49,32 @@ namespace ProyectoWeb.Controllers
                     var librosXml = doc.Descendants("libro");
                     foreach (var libroElem in librosXml)
                     {
-                        long isbn = Convert.ToInt64(libroElem.Element("ISBN")?.Value);
-                        string titulo = libroElem.Element("titulo")?.Value;
-                        string autor = libroElem.Element("autor")?.Value;
-                        string nombreCategoria = libroElem.Element("categoria")?.Value;
+                        var elemIsbn = libroElem.Element("ISBN")?.Value;
+                        var elemTitulo = libroElem.Element("titulo")?.Value;
+                        var elemAutor = libroElem.Element("autor")?.Value;
+                        var elemCategoria = libroElem.Element("categoria")?.Value;
 
-                        Libro libro = new Libro(isbn, titulo, autor, nombreCategoria);
-
-                        NodoCategoria nodoCat = JerarquiaCategorias.Buscar(nombreCategoria);
-                        if (nodoCat == null)
+                        if (!string.IsNullOrEmpty(elemIsbn) && long.TryParse(elemIsbn, out long isbn))
                         {
-                            nodoCat = JerarquiaCategorias.InsertarOCategorizar(nombreCategoria);
-                        }
+                            string titulo = elemTitulo ?? "Sin Título";
+                            string autor = elemAutor ?? "Desconocido";
+                            string nombreCategoria = elemCategoria ?? "Sin Categoria";
 
-                        nodoCat.Libros.Insertar(libro);
+                            Libro libro = new Libro(isbn, titulo, autor, nombreCategoria);
+
+                            LibrosGlobales.Insertar(libro);
+
+                            NodoCategoria nodoCat = JerarquiaCategorias.Buscar(nombreCategoria);
+                            if (nodoCat == null)
+                            {
+                                nodoCat = JerarquiaCategorias.InsertarOCategorizar(nombreCategoria);
+                            }
+
+                            nodoCat.Libros.Insertar(libro);
+                        }
                     }
 
-                    ViewBag.Exito = "¡Archivo XML procesado exitosamente en la jerarquía de categorías y árboles AVL!";
+                    ViewBag.Exito = "¡Archivo XML procesado correctamente de forma incremental!";
                 }
             }
             catch (Exception ex)

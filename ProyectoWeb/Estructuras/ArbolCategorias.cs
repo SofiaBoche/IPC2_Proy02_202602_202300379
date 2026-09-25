@@ -1,5 +1,6 @@
 using ProyectoWeb.Models;
 using System;
+using System.Text;
 
 namespace ProyectoWeb.Estructuras
 {
@@ -18,23 +19,49 @@ namespace ProyectoWeb.Estructuras
             NodoCategoria existente = BuscarRecursivo(Raiz, nombre);
             if (existente != null) return existente;
 
+            Categoria nuevaCat = new Categoria(nombre, padre);
+            NodoCategoria nuevoNodo = new NodoCategoria(nuevaCat);
+
             if (!string.IsNullOrEmpty(padre))
             {
                 NodoCategoria nodoPadre = BuscarRecursivo(Raiz, padre);
                 if (nodoPadre != null)
                 {
-                    Categoria nuevaCat = new Categoria(nombre, padre);
-                    NodoCategoria nuevoNodo = new NodoCategoria(nuevaCat);
-                    nodoPadre.Subcategorias.AgregarNodo(nuevoNodo);
+                    InsertarOrdenado(nodoPadre, nuevoNodo);
                     return nuevoNodo;
                 }
             }
 
-            Categoria catRaizSecundario = new Categoria(nombre, padre);
-            NodoCategoria nodoSec = new NodoCategoria(catRaizSecundario);
-            Raiz.Subcategorias.AgregarNodo(nodoSec);
-            return nodoSec;
+            InsertarOrdenado(Raiz, nuevoNodo);
+            return nuevoNodo;
         }
+
+        private void InsertarOrdenado(NodoCategoria padre, NodoCategoria nuevo)
+        {
+            if (padre.Subcategorias.Cabeza == null)
+            {
+                padre.Subcategorias.InsertarOrdenado(nuevo);
+                return;
+            }
+
+            if (string.Compare(nuevo.Dato.Nombre, padre.Subcategorias.Cabeza.Dato.Nombre, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                nuevo.Siguiente = padre.Subcategorias.Cabeza;
+                padre.Subcategorias.InsertarOrdenado(nuevo);
+                return;
+            }
+
+            NodoCategoria actual = padre.Subcategorias.Cabeza;
+            while (actual.Siguiente != null && 
+                   string.Compare(actual.Siguiente.Dato.Nombre, nuevo.Dato.Nombre, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                actual = actual.Siguiente;
+            }
+
+            nuevo.Siguiente = actual.Siguiente;
+            actual.Siguiente = nuevo;
+        }
+
 
         public NodoCategoria Buscar(string nombre) => BuscarRecursivo(Raiz, nombre);
 
@@ -52,6 +79,64 @@ namespace ProyectoWeb.Estructuras
             }
 
             return null;
+        }
+
+
+        public string MostrarEstructura()
+        {
+            if (Raiz == null) return "Catálogo vacío.";
+
+            StringBuilder sb = new StringBuilder();
+            MostrarEstructuraRec(Raiz, sb, 0);
+            return sb.ToString();
+        }
+
+        private void MostrarEstructuraRec(NodoCategoria nodo, StringBuilder sb, int nivel)
+        {
+            if (nodo == null) return;
+
+            string indentacion = new string('-', nivel * 4);
+            sb.AppendLine($"{indentacion}> {nodo.Dato.Nombre}");
+
+            NodoCategoria sub = nodo.Subcategorias.Cabeza;
+            while (sub != null)
+            {
+                MostrarEstructuraRec(sub, sb, nivel + 1);
+                sub = sub.Siguiente;
+            }
+        }
+
+        public string GenerarGraphviz(string nombreCategoriaInicio = null)
+        {
+            NodoCategoria inicio = Raiz;
+            if (!string.IsNullOrEmpty(nombreCategoriaInicio))
+            {
+                inicio = Buscar(nombreCategoriaInicio);
+            }
+
+            if (inicio == null) return "digraph ArbolCategorias { node [shape=box]; \"No encontrada\"; }";
+
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("digraph ArbolCategorias {");
+            sb.AppendLine("    node [shape=ellipse, style=filled, fillcolor=lightyellow, fontname=\"Arial\"];");
+
+            GenerarNodosGraphviz(inicio, sb);
+
+            sb.AppendLine("}");
+            return sb.ToString();
+        }
+
+        private void GenerarNodosGraphviz(NodoCategoria nodo, StringBuilder sb)
+        {
+            if (nodo == null) return;
+
+            NodoCategoria sub = nodo.Subcategorias.Cabeza;
+            while (sub != null)
+            {
+                sb.AppendLine($"    \"{nodo.Dato.Nombre}\" -> \"{sub.Dato.Nombre}\";");
+                GenerarNodosGraphviz(sub, sb);
+                sub = sub.Siguiente;
+            }
         }
     }
 }

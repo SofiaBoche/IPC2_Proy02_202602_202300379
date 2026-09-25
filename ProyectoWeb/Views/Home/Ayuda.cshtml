@@ -1,0 +1,30 @@
+@{
+    ViewData["Title"] = "Ayuda e Información";
+}
+
+<div class="container py-5">
+    <div class="card shadow-lg mx-auto" style="max-width: 700px; border-top: 5px solid #0d6efd;">
+        <div class="card-body p-4 text-center">
+            <h2 class="card-title fw-bold text-primary mb-3">Información del Estudiante</h2>
+            <hr />
+
+            <div class="my-4 text-start fs-5">
+                <p><strong>Nombre:</strong> @ViewBag.NombreEstudiante</p>
+                <p><strong>Carné:</strong> @ViewBag.Carnet</p>
+                <p><strong>Curso:</strong> Introducción a la Programación y Computación II</p>
+                <p><strong>Universidad:</strong> Universidad de San Carlos de Guatemala</p>
+            </div>
+
+            <hr />
+
+            <div class="mt-4">
+                <h4 class="fw-bold mb-3">Documentación del Proyecto</h4>
+                <p class="text-muted">Haz clic en el siguiente enlace para consultar la documentación oficial (ensayo) en el repositorio de GitHub:</p>
+                
+                <a href="@ViewBag.LinkDoc" target="_blank" class="btn btn-primary btn-lg mt-2 px-4 shadow">
+                    Ver Documentación en GitHub
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
