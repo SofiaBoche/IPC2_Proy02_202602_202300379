@@ -22,7 +22,7 @@ namespace ProyectoWeb.Controllers
         {
             ViewBag.NombreEstudiante = "Mónica Sofia Boche Figueroa"; 
             ViewBag.Carnet = "202300379";                     
-            ViewBag.LinkDoc = "https://github.com/SofiaBoche/IPC2_Proy02_202602_202300379.git"; 
+            ViewBag.LinkDoc = "https://github.com/SofiaBoche/IPC2_Proy02_202602_202300379/blob/main/Documentacion/Ensayo_2_202300379.pdf"; 
 
             return View();
         }
